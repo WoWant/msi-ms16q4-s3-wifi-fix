@@ -14,9 +14,10 @@
 #   6. Убирает старый wifi-reset и неверный iwlwifi disable_aspm.
 #
 # Запуск:
-#   sudo ./apply-sleep-fix.sh            # проверить EC и установить (по умолчанию)
-#   sudo ./apply-sleep-fix.sh --no-test  # установить без проверки EC
-#   sudo ./apply-sleep-fix.sh --test     # то же, что без флага (совместимость)
+#   sudo ./apply-sleep-fix.sh                    # проверить EC и установить (по умолчанию)
+#   sudo ./apply-sleep-fix.sh --no-test          # установить без проверки EC
+#   sudo ./apply-sleep-fix.sh --test             # то же, что без флага (совместимость)
+#   sudo ./apply-sleep-fix.sh --force-unsupported # другая MSI-модель, после проверки EC
 #
 set -uo pipefail
 shopt -s nullglob
@@ -36,11 +37,16 @@ say() { printf '%s\n' "$*"; }
 die() { say "ОШИБКА: $*"; exit 1; }
 
 DO_TEST=1
-case "${1:-}" in
-    ""|--test) DO_TEST=1 ;;
-    --no-test) DO_TEST=0 ;;
-    *) die "неизвестный аргумент: $1. Используйте --no-test." ;;
-esac
+FORCE_UNSUPPORTED=0
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --test) DO_TEST=1 ;;
+        --no-test) DO_TEST=0 ;;
+        --force-unsupported) FORCE_UNSUPPORTED=1 ;;
+        *) die "неизвестный аргумент: $1. Используйте --no-test или --force-unsupported." ;;
+    esac
+    shift
+done
 
 [ "$(id -u)" -eq 0 ] || die "запустите через sudo"
 
@@ -62,10 +68,21 @@ say "=== install $(date -Is) ==="
 PRODUCT=$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)
 BOARD=$(cat /sys/class/dmi/id/board_name 2>/dev/null || true)
 say "model: $PRODUCT / $BOARD"
+MODEL_OK=0
 case "$PRODUCT $BOARD" in
-    *"P65 Creator 8SF"*|*"MS-16Q4"*) ;;
-    *) say "ПРЕДУПРЕЖДЕНИЕ: скрипт рассчитан на MSI MS-16Q4 (P65/GS65/GP65/GE65)." ;;
+    *"P65 Creator 8SF"*|*"MS-16Q4"*) MODEL_OK=1 ;;
 esac
+if [ "$MODEL_OK" -eq 0 ]; then
+    if [ "$FORCE_UNSUPPORTED" -eq 1 ]; then
+        say "ПРЕДУПРЕЖДЕНИЕ: модель не MS-16Q4; продолжаю из-за --force-unsupported."
+    else
+        say "ОШИБКА: модель $PRODUCT / $BOARD не MS-16Q4."
+        say "Скрипт пишет в EC; на другой модели адрес/бит могут быть другими."
+        say "Проверьте debug/ec_dump, задайте MSI_EC_ADDR/MSI_EC_BIT и запустите"
+        say "с --force-unsupported, если уверены в своих действиях."
+        exit 1
+    fi
+fi
 
 command -v nmcli   >/dev/null 2>&1 || die "нужен NetworkManager (nmcli)"
 command -v iw      >/dev/null 2>&1 || die "нужен пакет iw"

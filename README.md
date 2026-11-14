@@ -362,14 +362,20 @@ cat /sys/devices/platform/msi-ec/debug/ec_dump
 ```
 
 Найдите регистр, который меняется при переключении Fn+F10 (или
-известный по `msi-ec` issue #804). Затем задайте значения:
+известный по `msi-ec` issue #804). Затем задайте значения (пример: `0x2e`, бит 3):
 
 ```bash
-sudo MSI_EC_ADDR=2e MSI_EC_BIT=3 ./apply-sleep-fix.sh
+sudo MSI_EC_ADDR=2e MSI_EC_BIT=3 ./apply-sleep-fix.sh --force-unsupported
 ```
 
+Скрипт по умолчанию откажется работать на модели, отличной от MS-16Q4:
+`--force-unsupported` — это явное подтверждение, что вы проверили EC-регистр.
 По умолчанию скрипт выполнит проверку EC. Если проверка уже сделана и нужно
-просто установить/обновить фикс, добавьте `--no-test`.
+просто установить/обновить фикс, добавьте `--no-test`:
+
+```bash
+sudo MSI_EC_ADDR=2e MSI_EC_BIT=3 ./apply-sleep-fix.sh --no-test --force-unsupported
+```
 
 Или отредактируйте `/etc/msi-wifi-rfkill.conf` после установки:
 
