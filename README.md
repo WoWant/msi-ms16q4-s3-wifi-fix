@@ -1,3 +1,6 @@
+[![RU](https://img.shields.io/badge/RU-Russian-blue)](README.md)
+[![EN](https://img.shields.io/badge/EN-English-lightgrey)](README.en.md)
+
 # MSI MS-16Q4: полноценный S3 + исправление Wi-Fi после сна
 
 Фикс для ноутбуков MSI на плате **MS-16Q4** (P65 Creator 8SF, GS65 Stealth 8RF/9SE,
@@ -224,7 +227,7 @@ resume done: wlan0=connected
 
 Ожидаемое время от пробуждения до Wi-Fi — примерно **5–8 секунд**.
 Если в логе снова `iface state 'unmanaged'` и пауза ~15 секунд, значит
-установлен старый хук; повторно запустите `sudo ./apply-sleep-fix.sh`.
+установлен старый хук; обновите его: `sudo ./apply-sleep-fix.sh --no-test`.
 
 ---
 
